@@ -10,29 +10,20 @@ python3 -m http.server 8000
 # → http://localhost:8000/
 ```
 
-## レストくんの画像を差し替える
+## レストくんの画像
 
-`assets/rest-kun/` に次の名前で PNG（透過・正方形、256×256 推奨）を置くと、自動でそちらが使われます。
-画像が無い状態は、`js/sprite.js` でコードから描いた仮のドット絵を表示します。
+`assets/rest-kun/` の `<状態>-01.png`, `-02.png`（最大 `-03.png`）を 850ms ごとに切り替えて表示します。
+状態名は `prepare`（身支度中）/ `work`（お仕事中）/ `break`（ひと休み）/ `lunch`（お昼ご飯）/ `finish`（お仕事おしまい）/ `holiday`（おやすみの日）。
 
-| 状態 | ファイル名 |
-| --- | --- |
-| 身支度中 | `prepare-01.png`, `prepare-02.png` |
-| お仕事中 | `work-01.png`, `work-02.png`, `work-03.png` |
-| ひと休み | `break-01.png`, `break-02.png` |
-| お昼ご飯 | `lunch-01.png`, `lunch-02.png` |
-| お仕事おしまい | `finish-01.png`, `finish-02.png` |
-| おやすみの日 | `holiday-01.png`, `holiday-02.png` |
-
-コマは `-01` から順に最大3枚まで読み込み、850ms ごとに切り替えます。
+画像は `rest-kun-pixel-master.png`（ピクセル版マスター）を基準に、顔・耳・しっぽ・スカーフ・色・頭身をそろえて作っています。
+いずれも透過 PNG、104×104 ドットを 3 倍にした 312×312px です。
 
 ## 構成
 
 ```
 index.html
 css/style.css
-js/app.js      時計・ステータス判定・設定（LocalStorage）
-js/sprite.js   仮のドット絵レストくん
+js/app.js      時計・ステータス判定・設定（LocalStorage）・キャラのアニメーション
 assets/fonts/  時刻用ピクセルフォント（DotGothic16 の数字だけを抜き出したもの / OFL）
 assets/rest-kun/
 ```

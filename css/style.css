@@ -98,31 +98,68 @@ p { margin: 0; }
   flex-direction: column;
   align-items: center;
   gap: 1cqh;
-  width: clamp(110px, min(26cqw, 72cqh), 200px);
+  width: clamp(120px, min(28cqw, 76cqh), 220px);
 }
 
 .message {
-  max-width: 100%;
-  padding: 0.35em 0.8em;
-  border-radius: 999px;
-  background: var(--sand);
-  font-size: clamp(10px, min(1.7cqw, 5.4cqh), 14px);
-  line-height: 1.45;
+  position: relative;
+  z-index: 1;
+  width: max-content;
+  max-width: 34cqw;
+  margin-bottom: 4px;
+  padding: 0.7em 1.2em;
+  border: 1.5px solid var(--beige);
+  border-radius: 16px;
+  background: var(--white);
+  box-shadow: 0 2px 0 var(--sand);
+  font-size: clamp(11px, min(2cqw, 6.4cqh), 16px);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
   text-align: center;
   white-space: pre-line;
 }
 
-/* 長いメッセージ（おやすみの日）は角丸の四角にして、キャラの幅からはみ出してよい */
+/* 吹き出しのしっぽ（レストくんの頭のほうへ向ける） */
+.message::before,
+.message::after {
+  content: "";
+  position: absolute;
+  left: 58%;
+  border-style: solid;
+  border-color: transparent;
+}
+.message::before {
+  bottom: -10px;
+  border-width: 10px 4px 0 8px;
+  border-top-color: var(--beige);
+}
+.message::after {
+  bottom: -7px;
+  margin-left: 1.5px;
+  border-width: 8px 3px 0 6px;
+  border-top-color: var(--white);
+}
+
+/* 長いメッセージ（おやすみの日）はキャラの幅からはみ出してよい */
 .message.long {
-  width: max-content;
-  max-width: 46cqw;
-  border-radius: 10px;
-  font-size: clamp(9px, min(1.5cqw, 4.8cqh), 12px);
+  max-width: 48cqw;
+  padding: 0.6em 1em;
+  font-size: clamp(9px, min(1.6cqw, 5.2cqh), 13px);
+}
+
+.message.pop { animation: pop .45s ease-out; }
+@keyframes pop {
+  0% { transform: scale(.85) translateY(4px); opacity: 0; }
+  60% { transform: scale(1.04); opacity: 1; }
+  100% { transform: none; }
 }
 
 .character {
-  width: clamp(80px, min(20cqw, 58cqh), 180px);
+  width: clamp(90px, min(22cqw, 68cqh), 190px);
   aspect-ratio: 1 / 1;
+  /* 画像の上側は透明な余白なので、吹き出しに少し重ねて間を詰める */
+  margin-top: -9%;
 }
 
 .character canvas,
@@ -132,12 +169,6 @@ p { margin: 0; }
   height: 100%;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-}
-
-.caption {
-  font-size: clamp(9px, min(1.4cqw, 4.4cqh), 12px);
-  color: var(--taupe);
-  letter-spacing: 0.06em;
 }
 
 .gear {
@@ -159,14 +190,9 @@ p { margin: 0; }
 .gear svg { width: 18px; height: 18px; }
 .gear:hover, .gear:focus-visible { color: var(--navy); background: var(--sand); outline: none; }
 
-/* 狭い埋め込み（スマホ幅など）ではキャプションを省いて文字の重なりを防ぐ */
+/* 狭い埋め込み（スマホ幅など）では長いメッセージを小さく */
 @container (max-width: 480px) {
-  .caption { display: none; }
   .message.long { font-size: 10px; }
-}
-/* 低すぎる埋め込みでもキャラクターが切れないように */
-@container (max-height: 200px) {
-  .caption { display: none; }
 }
 
 /* ---------- 設定モーダル ---------- */
@@ -289,5 +315,5 @@ input:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
 .btn-small.danger { background: var(--danger); color: var(--white); }
 
 @media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; }
+  * { transition: none !important; animation: none !important; }
 }

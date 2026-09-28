@@ -5,7 +5,7 @@
 
   const STORAGE_KEY = "re-clock:settings:v1";
   const FRAME_INTERVAL_MS = 850;
-  const MAX_PNG_FRAMES = 3;
+  const MAX_FRAMES = 3;
   const DAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 
   const DEFAULTS = Object.freeze({
@@ -21,15 +21,15 @@
   });
 
   const STATUSES = {
-    prepare: { label: "身支度中", message: "今日もゆっくり始めよう", caption: "お仕事の準備中" },
-    work: { label: "お仕事中", message: "がんばるぞ", caption: "PCで作業中" },
-    break: { label: "ひと休み", message: "ちょっと休憩", caption: "コーヒーでひと息" },
-    lunch: { label: "お昼ご飯", message: "もぐもぐ", caption: "ごはん中" },
-    finish: { label: "お仕事おしまい", message: "今日もいっぱい働いた", caption: "のんびり中" },
+    prepare: { label: "身支度中", message: "今日もゆっくり始めよう", pose: "お仕事の準備中" },
+    work: { label: "お仕事中", message: "がんばるぞ", pose: "PCで作業中" },
+    break: { label: "ひと休み", message: "ちょっと休憩", pose: "コーヒーでひと息" },
+    lunch: { label: "お昼ご飯", message: "もぐもぐ", pose: "ごはん中" },
+    finish: { label: "お仕事おしまい", message: "今日もいっぱい働いた", pose: "のんびり中" },
     holiday: {
       label: "おやすみの日",
       message: "おや、今日もお仕事？お疲れさま！\nでも休憩も大切だから、無理しないでね◎",
-      caption: "コーヒーをどうぞ",
+      pose: "コーヒーをどうぞ",
     },
   };
 
@@ -112,7 +112,6 @@
     time: document.getElementById("time"),
     message: document.getElementById("message"),
     character: document.getElementById("character"),
-    caption: document.getElementById("caption"),
   };
 
   let settings = loadSettings();
@@ -140,10 +139,13 @@
     const info = STATUSES[status];
     el.widget.dataset.status = status;
     el.status.textContent = info.label;
-    el.message.textContent = `「${info.message}」`;
+    el.message.textContent = info.message;
+    // 切り替わったときだけ、ぽんっと出てくる動きをつける
+    el.message.classList.remove("pop");
+    void el.message.offsetWidth;
+    el.message.classList.add("pop");
     el.message.classList.toggle("long", info.message.length > 20);
-    el.caption.textContent = info.caption;
-    el.character.setAttribute("aria-label", `レストくん（${info.caption}）`);
+    el.character.setAttribute("aria-label", `レストくん（${info.pose}）`);
     showCharacter(status);
   }
 
@@ -158,39 +160,42 @@
     if (!document.hidden) renderClock();
   });
 
-  // ---------- キャラクター（PNG があれば優先、なければコードで描いたドット絵） ----------
+  // ---------- キャラクター（assets/rest-kun/<状態>-01.png, -02.png ... を順に切り替える） ----------
 
-  const pngCache = {};
+  const framesCache = {};
   let animTimer = null;
   let frameIndex = 0;
 
   function loadImage(src) {
     return new Promise((resolve) => {
       const img = new Image();
+      img.alt = "";
       img.onload = () => resolve(img);
       img.onerror = () => resolve(null);
       img.src = src;
     });
   }
 
-  // assets/rest-kun/<状態>-01.png, -02.png ... を読み込めるだけ読む
-  async function loadPngFrames(status) {
-    if (!(status in pngCache)) {
-      pngCache[status] = (async () => {
+  // 読み込めたコマだけを使う（3コマ目を足したいときは画像を置くだけでよい）
+  function loadFrames(status) {
+    if (!framesCache[status]) {
+      framesCache[status] = (async () => {
         const frames = [];
-        for (let i = 1; i <= MAX_PNG_FRAMES; i++) {
+        for (let i = 1; i <= MAX_FRAMES; i++) {
           const img = await loadImage(`./assets/rest-kun/${status}-${pad(i)}.png`);
           if (!img) break;
-          img.alt = "";
           frames.push(img);
         }
         return frames;
       })();
     }
-    return pngCache[status];
+    return framesCache[status];
   }
 
-  function playFrames(frames) {
+  async function showCharacter(status) {
+    const frames = await loadFrames(status);
+    if (status !== currentStatus || !frames.length) return;
+
     clearInterval(animTimer);
     frameIndex = 0;
     el.character.replaceChildren(frames[0]);
@@ -199,13 +204,6 @@
       frameIndex = (frameIndex + 1) % frames.length;
       el.character.replaceChildren(frames[frameIndex]);
     }, FRAME_INTERVAL_MS);
-  }
-
-  // まずドット絵をすぐ出し、PNG が見つかったら差し替える
-  async function showCharacter(status) {
-    playFrames(window.RestKunSprite.frames(status));
-    const png = await loadPngFrames(status);
-    if (png.length && status === currentStatus) playFrames(png);
   }
 
   // ---------- 設定モーダル ----------
@@ -353,4 +351,6 @@
   window.ReClock = { getStatus, normalize, DEFAULTS };
 
   tick();
+  // 状態が切り替わった瞬間に絵が遅れないよう、全状態の画像を先に読んでおく
+  Object.keys(STATUSES).forEach(loadFrames);
 })();
