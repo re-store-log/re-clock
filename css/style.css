@@ -1,0 +1,293 @@
+@font-face {
+  font-family: "DotGothic16 Clock";
+  src: url("../assets/fonts/DotGothic16-clock.woff2") format("woff2");
+  font-display: swap;
+}
+
+:root {
+  --navy: #445565;
+  --taupe: #A89C92;
+  --cream: #F6F4F1;
+  --sand: #E8E3DD;
+  --beige: #CDBFAF;
+  --white: #FFFFFF;
+  --danger: #A25B4E;
+
+  --font-ja: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-pixel: "DotGothic16 Clock", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--cream);
+  color: var(--navy);
+  font-family: var(--font-ja);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+p { margin: 0; }
+
+/* ---------- ウィジェット本体 ---------- */
+
+.widget {
+  container-type: size;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0 4cqw;
+  width: 100%;
+  height: 100%;
+  min-height: 160px;
+  padding: 4cqh 6cqw 4cqh 5cqw;
+}
+
+.clock-area {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.clock-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2em;
+}
+
+.status {
+  font-size: clamp(14px, min(3.4cqw, 11cqh), 30px);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--navy);
+  white-space: nowrap;
+}
+
+.datetime {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  font-family: var(--font-pixel);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.date {
+  font-size: clamp(16px, min(4.2cqw, 14cqh), 36px);
+  color: var(--taupe);
+}
+
+.time {
+  font-size: clamp(34px, min(11cqw, 38cqh), 96px);
+  letter-spacing: 0.02em;
+}
+
+.time .sec {
+  font-size: 0.45em;
+  margin-left: 0.15em;
+  color: var(--taupe);
+}
+
+.char-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1cqh;
+  width: clamp(110px, min(26cqw, 72cqh), 200px);
+}
+
+.message {
+  max-width: 100%;
+  padding: 0.35em 0.8em;
+  border-radius: 999px;
+  background: var(--sand);
+  font-size: clamp(10px, min(1.7cqw, 5.4cqh), 14px);
+  line-height: 1.45;
+  text-align: center;
+  white-space: pre-line;
+}
+
+/* 長いメッセージ（おやすみの日）は角丸の四角にして、キャラの幅からはみ出してよい */
+.message.long {
+  width: max-content;
+  max-width: 46cqw;
+  border-radius: 10px;
+  font-size: clamp(9px, min(1.5cqw, 4.8cqh), 12px);
+}
+
+.character {
+  width: clamp(80px, min(20cqw, 58cqh), 180px);
+  aspect-ratio: 1 / 1;
+}
+
+.character canvas,
+.character img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.caption {
+  font-size: clamp(9px, min(1.4cqw, 4.4cqh), 12px);
+  color: var(--taupe);
+  letter-spacing: 0.06em;
+}
+
+.gear {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--taupe);
+  cursor: pointer;
+  transition: color .2s, background .2s;
+}
+.gear svg { width: 18px; height: 18px; }
+.gear:hover, .gear:focus-visible { color: var(--navy); background: var(--sand); outline: none; }
+
+/* 狭い埋め込み（スマホ幅など）ではキャプションを省いて文字の重なりを防ぐ */
+@container (max-width: 480px) {
+  .caption { display: none; }
+  .message.long { font-size: 10px; }
+}
+/* 低すぎる埋め込みでもキャラクターが切れないように */
+@container (max-height: 200px) {
+  .caption { display: none; }
+}
+
+/* ---------- 設定モーダル ---------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: rgba(68, 85, 101, 0.35);
+}
+.modal-backdrop[hidden] { display: none; }
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: min(680px, 100%);
+  max-height: 100%;
+  border-radius: 12px;
+  background: var(--cream);
+  box-shadow: 0 8px 28px rgba(68, 85, 101, 0.25);
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px 0 16px;
+}
+.modal-head h2 { margin: 0; font-size: 14px; letter-spacing: 0.1em; }
+.close {
+  width: 28px; height: 28px;
+  border: 0; border-radius: 50%;
+  background: transparent; color: var(--taupe);
+  font-size: 18px; line-height: 1; cursor: pointer;
+}
+.close:hover { background: var(--sand); color: var(--navy); }
+
+/* 埋め込みは高さ 250px 程度なので、中身だけスクロールさせる */
+.fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 6px 14px;
+  padding: 0 16px 6px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field > span:first-child { font-size: 11px; color: var(--taupe); letter-spacing: 0.06em; }
+.field-wide { grid-column: span 2; }
+.field-full { grid-column: 1 / -1; }
+
+.range, .unit { display: flex; align-items: center; gap: 6px; }
+
+input[type="time"], input[type="number"] {
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--beige);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--navy);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+input[type="number"] { width: 5em; }
+input:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
+
+.check { display: flex; align-items: center; gap: 8px; min-height: 29px; cursor: pointer; }
+.check input { width: 16px; height: 16px; accent-color: var(--navy); margin: 0; }
+
+.break-only.is-disabled { opacity: 0.4; }
+
+.days { display: flex; flex-wrap: wrap; gap: 6px; }
+.day {
+  width: 28px; height: 28px;
+  border: 0; border-radius: 50%;
+  background: var(--sand);
+  color: var(--taupe);
+  font: inherit; font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.day[aria-pressed="true"] { background: var(--navy); color: var(--white); }
+.day:focus-visible { outline: 2px solid var(--taupe); outline-offset: 2px; }
+
+.error { min-height: 0; padding: 0 16px; color: var(--danger); font-size: 12px; }
+.error:empty { display: none; }
+
+.modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 16px 7px;
+  border-top: 1px solid var(--sand);
+}
+
+/* 幅の狭い埋め込みでは2列に */
+@media (max-width: 560px) {
+  .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.reset { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+
+.btn-primary, .btn-text, .btn-small {
+  border: 0; border-radius: 8px; font: inherit; cursor: pointer;
+}
+.btn-primary { padding: 6px 22px; background: var(--navy); color: var(--white); font-weight: 600; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-text { padding: 6px 4px; background: transparent; color: var(--taupe); text-decoration: underline; text-underline-offset: 3px; }
+.btn-text:hover { color: var(--navy); }
+.btn-small { padding: 4px 10px; background: var(--sand); color: var(--navy); font-size: 12px; }
+.btn-small.danger { background: var(--danger); color: var(--white); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

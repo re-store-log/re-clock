@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>re:clock</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <main class="widget" id="widget" data-status="work">
+    <section class="clock-area">
+      <div class="clock-block">
+        <p class="status" id="status">お仕事中</p>
+        <p class="datetime">
+          <span class="date" id="date">--.--</span>
+          <span class="time" id="time">--:--</span>
+        </p>
+      </div>
+    </section>
+
+    <section class="char-area">
+      <p class="message" id="message">「がんばるぞ」</p>
+      <div class="character" id="character" role="img" aria-label="レストくん"></div>
+      <p class="caption" id="caption">PCで作業中</p>
+    </section>
+
+    <button type="button" class="gear" id="open-settings" aria-label="設定を開く">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.7 7.7 0 0 0 0-2l2.1-1.6-2-3.4-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.4L6.6 11a7.7 7.7 0 0 0 0 2l-2.1 1.6 2 3.4 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.4zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" transform="translate(-1 0)"/></svg>
+    </button>
+  </main>
+
+  <div class="modal-backdrop" id="modal" hidden>
+    <form class="modal" id="settings-form" role="dialog" aria-modal="true" aria-labelledby="modal-title" novalidate>
+      <header class="modal-head">
+        <h2 id="modal-title">設定</h2>
+        <button type="button" class="close" id="close-settings" aria-label="閉じる">×</button>
+      </header>
+
+      <div class="fields">
+        <label class="field">
+          <span>勤務開始</span>
+          <input type="time" name="workStart" required>
+        </label>
+        <label class="field">
+          <span>勤務終了</span>
+          <input type="time" name="workEnd" required>
+        </label>
+        <div class="field field-wide">
+          <span>昼休み</span>
+          <div class="range">
+            <input type="time" name="lunchStart" aria-label="昼休み開始" required>
+            <span>〜</span>
+            <input type="time" name="lunchEnd" aria-label="昼休み終了" required>
+          </div>
+        </div>
+
+        <label class="check">
+          <input type="checkbox" name="breakEnabled">
+          <span>小休憩を入れる</span>
+        </label>
+        <label class="field break-only">
+          <span>集中時間</span>
+          <span class="unit"><input type="number" name="focusMin" min="1" max="240" inputmode="numeric" required>分</span>
+        </label>
+        <label class="field break-only">
+          <span>休憩時間</span>
+          <span class="unit"><input type="number" name="breakMin" min="1" max="120" inputmode="numeric" required>分</span>
+        </label>
+        <label class="check">
+          <input type="checkbox" name="showSeconds">
+          <span>秒を表示</span>
+        </label>
+
+        <div class="field field-full">
+          <span>勤務曜日</span>
+          <div class="days" id="days" role="group" aria-label="勤務曜日"></div>
+        </div>
+
+      </div>
+
+      <p class="error" id="form-error" role="alert"></p>
+
+      <footer class="modal-foot">
+        <div class="reset" id="reset-area">
+          <button type="button" class="btn-text" id="reset">初期設定に戻す</button>
+        </div>
+        <button type="submit" class="btn-primary">保存</button>
+      </footer>
+    </form>
+  </div>
+
+  <script src="./js/sprite.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>

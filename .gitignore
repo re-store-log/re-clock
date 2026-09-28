@@ -1,0 +1,8 @@
+.DS_Store
+*.log
+node_modules/
+.vscode/
+.idea/
+
+# デザイン参照画像（アプリでは使わないので公開しない）
+assets/rest-kun/img_design_*.png
