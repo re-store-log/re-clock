@@ -33,17 +33,31 @@ p { margin: 0; }
 
 /* ---------- ウィジェット本体 ---------- */
 
+/* 埋め込み枠そのものの大きさを基準にする */
+body { container-type: size; }
+
+/*
+ * 大きさはすべて --char（キャラの幅）と --time（時刻の文字サイズ）から決める。
+ * 横長：高さを基準にし、幅が足りないときだけ幅で抑える（狭めても全体が縮みすぎない）。
+ * 縦長・正方形：時計の下にキャラを置く縦並び（下の @container）。
+ */
 .widget {
-  container-type: size;
+  --char: min(64cqh, 36cqw, 210px);
+  --time: min(34cqh, calc((100cqw - var(--char) - 100px) / 3.2), 110px);
+  --bubble: clamp(11px, calc(var(--char) * 0.085), 16px);
+  --bubble-long: clamp(9px, calc(var(--char) * 0.07), 13px);
+  --bubble-max: 34cqw;
+  /* 長い吹き出しは、時計に重ならない範囲まで左へ広げる（最低でもキャラの幅） */
+  --bubble-long-max: min(300px, max(calc(var(--char) * 1.2), calc(100cqw - var(--time) * 3.4 - 90px)));
+
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 0 4cqw;
+  gap: 0 clamp(12px, 4cqw, 40px);
   width: 100%;
   height: 100%;
-  min-height: 160px;
-  padding: 4cqh 6cqw 4cqh 5cqw;
+  padding: 12px clamp(16px, 6cqw, 56px) 12px clamp(12px, 4cqw, 40px);
 }
 
 .clock-area {
@@ -60,7 +74,7 @@ p { margin: 0; }
 }
 
 .status {
-  font-size: clamp(14px, min(3.4cqw, 11cqh), 30px);
+  font-size: max(13px, calc(var(--time) * 0.3));
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--navy);
@@ -78,12 +92,12 @@ p { margin: 0; }
 }
 
 .date {
-  font-size: clamp(16px, min(4.2cqw, 14cqh), 36px);
+  font-size: max(14px, calc(var(--time) * 0.38));
   color: var(--taupe);
 }
 
 .time {
-  font-size: clamp(34px, min(11cqw, 38cqh), 96px);
+  font-size: max(30px, var(--time));
   letter-spacing: 0.02em;
 }
 
@@ -97,28 +111,29 @@ p { margin: 0; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1cqh;
-  width: clamp(120px, min(28cqw, 76cqh), 220px);
+  width: calc(var(--char) * 1.1);
 }
 
 .message {
   position: relative;
   z-index: 1;
   width: max-content;
-  max-width: 34cqw;
+  max-width: var(--bubble-max);
   margin-bottom: 4px;
   padding: 0.7em 1.2em;
   border: 1.5px solid var(--beige);
   border-radius: 16px;
   background: var(--white);
   box-shadow: 0 2px 0 var(--sand);
-  font-size: clamp(11px, min(2cqw, 6.4cqh), 16px);
+  font-size: var(--bubble);
   font-weight: 500;
   line-height: 1.5;
   letter-spacing: 0.04em;
   text-align: center;
   white-space: pre-line;
 }
+
+.message .phrase { display: inline-block; }
 
 /* 吹き出しのしっぽ（レストくんの頭のほうへ向ける） */
 .message::before,
@@ -143,9 +158,9 @@ p { margin: 0; }
 
 /* 長いメッセージ（おやすみの日）はキャラの幅からはみ出してよい */
 .message.long {
-  max-width: 48cqw;
+  max-width: var(--bubble-long-max);
   padding: 0.6em 1em;
-  font-size: clamp(9px, min(1.6cqw, 5.2cqh), 13px);
+  font-size: var(--bubble-long);
 }
 
 .message.pop { animation: pop .45s ease-out; }
@@ -156,13 +171,12 @@ p { margin: 0; }
 }
 
 .character {
-  width: clamp(90px, min(22cqw, 68cqh), 190px);
+  width: var(--char);
   aspect-ratio: 1 / 1;
   /* 画像の上側は透明な余白なので、吹き出しに少し重ねて間を詰める */
   margin-top: -9%;
 }
 
-.character canvas,
 .character img {
   display: block;
   width: 100%;
@@ -190,9 +204,23 @@ p { margin: 0; }
 .gear svg { width: 18px; height: 18px; }
 .gear:hover, .gear:focus-visible { color: var(--navy); background: var(--sand); outline: none; }
 
-/* 狭い埋め込み（スマホ幅など）では長いメッセージを小さく */
-@container (max-width: 480px) {
-  .message.long { font-size: 10px; }
+/* 縦長・正方形（スマホで直接開いたとき、正方形の埋め込みなど）は縦並び */
+@container (max-aspect-ratio: 8 / 5) and (min-height: 300px) {
+  .widget {
+    --char: min(64cqw, 48cqh, 300px);
+    --time: min(24cqw, 18cqh, 120px);
+    --bubble: clamp(12px, calc(var(--char) * 0.08), 17px);
+    --bubble-long: clamp(11px, calc(var(--char) * 0.065), 15px);
+    --bubble-max: 86cqw;
+    --bubble-long-max: min(88cqw, 360px);
+
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    align-content: center;
+    justify-items: center;
+    gap: clamp(12px, 4cqh, 40px);
+    padding: 16px;
+  }
 }
 
 /* ---------- 設定モーダル ---------- */

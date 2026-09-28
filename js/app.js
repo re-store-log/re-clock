@@ -21,14 +21,15 @@
   });
 
   const STATUSES = {
-    prepare: { label: "身支度中", message: "今日もゆっくり始めよう", pose: "お仕事の準備中" },
+    prepare: { label: "身支度中", message: "今日も|ゆっくり始めよう", pose: "お仕事の準備中" },
     work: { label: "お仕事中", message: "がんばるぞ", pose: "PCで作業中" },
     break: { label: "ひと休み", message: "ちょっと休憩", pose: "コーヒーでひと息" },
     lunch: { label: "お昼ご飯", message: "もぐもぐ", pose: "ごはん中" },
-    finish: { label: "お仕事おしまい", message: "今日もいっぱい働いた", pose: "のんびり中" },
+    finish: { label: "お仕事おしまい", message: "今日も|いっぱい働いた", pose: "のんびり中" },
     holiday: {
       label: "おやすみの日",
-      message: "おや、今日もお仕事？お疲れさま！\nでも休憩も大切だから、無理しないでね◎",
+      // 「|」は折り返してよい位置、「\n」は必ず改行する位置
+      message: "おや、|今日もお仕事？|お疲れさま！\nでも休憩も|大切だから、|無理しないでね◎",
       pose: "コーヒーをどうぞ",
     },
   };
@@ -139,14 +140,28 @@
     const info = STATUSES[status];
     el.widget.dataset.status = status;
     el.status.textContent = info.label;
-    el.message.textContent = info.message;
+    renderMessage(info.message);
     // 切り替わったときだけ、ぽんっと出てくる動きをつける
     el.message.classList.remove("pop");
     void el.message.offsetWidth;
     el.message.classList.add("pop");
-    el.message.classList.toggle("long", info.message.length > 20);
+    el.message.classList.toggle("long", info.message.length > 24);
     el.character.setAttribute("aria-label", `レストくん（${info.pose}）`);
     showCharacter(status);
+  }
+
+  // 文節ごとに折り返さない塊にして、「お疲れさ／ま！」のような変な位置での改行を防ぐ
+  function renderMessage(text) {
+    el.message.replaceChildren();
+    text.split("\n").forEach((line, i) => {
+      if (i > 0) el.message.appendChild(document.createElement("br"));
+      line.split("|").forEach((phrase) => {
+        const span = document.createElement("span");
+        span.className = "phrase";
+        span.textContent = phrase;
+        el.message.appendChild(span);
+      });
+    });
   }
 
   // 次の秒の頭に合わせて更新する（setInterval だと少しずつずれるため）
