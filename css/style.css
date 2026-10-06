@@ -6,6 +6,7 @@
 
 :root {
   --navy: #445565;
+  --ink-sub: #6F6359;   /* 小さい文字用。--taupe より濃くして読みやすく */
   --taupe: #A89C92;
   --cream: #F6F4F1;
   --sand: #E8E3DD;
@@ -43,12 +44,14 @@ body { container-type: size; }
  */
 .widget {
   --char: min(64cqh, 36cqw, 210px);
-  --time: min(34cqh, calc((100cqw - var(--char) - 100px) / 3.2), 110px);
+  /* 時計（日付＋時刻）の横幅は、時刻の文字サイズの約 3.6 倍（秒ありで約 4.2 倍） */
+  --clock-em: 3.7;
+  --time: min(34cqh, calc((100cqw - var(--char) - 90px) / var(--clock-em)), 110px);
   --bubble: clamp(11px, calc(var(--char) * 0.085), 16px);
   --bubble-long: clamp(9px, calc(var(--char) * 0.07), 13px);
-  --bubble-max: 34cqw;
+  --bubble-max: max(34cqw, calc(var(--char) * 1.15));
   /* 長い吹き出しは、時計に重ならない範囲まで左へ広げる（最低でもキャラの幅） */
-  --bubble-long-max: min(300px, max(calc(var(--char) * 1.2), calc(100cqw - var(--time) * 3.4 - 90px)));
+  --bubble-long-max: min(300px, max(calc(var(--char) * 1.2), calc(100cqw - var(--time) * var(--clock-em) - 90px)));
 
   position: relative;
   display: grid;
@@ -59,6 +62,8 @@ body { container-type: size; }
   height: 100%;
   padding: 12px clamp(16px, 6cqw, 56px) 12px clamp(12px, 4cqw, 40px);
 }
+
+.widget.with-seconds { --clock-em: 4.25; }
 
 .clock-area {
   display: flex;
@@ -104,7 +109,6 @@ body { container-type: size; }
 .time .sec {
   font-size: 0.45em;
   margin-left: 0.15em;
-  color: var(--taupe);
 }
 
 .char-area {
@@ -208,7 +212,7 @@ body { container-type: size; }
 @container (max-aspect-ratio: 8 / 5) and (min-height: 300px) {
   .widget {
     --char: min(64cqw, 48cqh, 300px);
-    --time: min(24cqw, 18cqh, 120px);
+    --time: min(calc((100cqw - 40px) / var(--clock-em)), 18cqh, 120px);
     --bubble: clamp(12px, calc(var(--char) * 0.08), 17px);
     --bubble-long: clamp(11px, calc(var(--char) * 0.065), 15px);
     --bubble-max: 86cqw;
@@ -249,13 +253,13 @@ body { container-type: size; }
   font-size: 13px;
 }
 
-.modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 10px 0 16px;
+/* 埋め込みは低いので、見出しの行は作らず「×」だけを右上に置く */
+.modal { position: relative; }
+.modal-head h2 {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);
 }
-.modal-head h2 { margin: 0; font-size: 14px; letter-spacing: 0.1em; }
+.modal-head .close { position: absolute; top: 4px; right: 6px; z-index: 1; }
+
 .close {
   width: 28px; height: 28px;
   border: 0; border-radius: 50%;
@@ -270,19 +274,19 @@ body { container-type: size; }
   grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: end;
   gap: 6px 14px;
-  padding: 0 16px 6px;
+  padding: 10px 40px 6px 16px;
   overflow-y: auto;
   min-height: 0;
 }
 
 .field { display: flex; flex-direction: column; gap: 4px; }
-.field > span:first-child { font-size: 11px; color: var(--taupe); letter-spacing: 0.06em; }
+.field > span:first-child { font-size: 11px; color: var(--ink-sub); letter-spacing: 0.06em; }
 .field-wide { grid-column: span 2; }
 .field-full { grid-column: 1 / -1; }
 
 .range, .unit { display: flex; align-items: center; gap: 6px; }
 
-input[type="time"], input[type="number"] {
+select, input[type="number"] {
   min-width: 0;
   padding: 4px 8px;
   border: 1px solid var(--beige);
@@ -293,7 +297,20 @@ input[type="time"], input[type="number"] {
   font-variant-numeric: tabular-nums;
 }
 input[type="number"] { width: 5em; }
-input:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
+
+.time-select { display: flex; align-items: center; gap: 6px; }
+.time-part { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--ink-sub); }
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 22px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23A89C92' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+  font-size: 13px;
+  cursor: pointer;
+}
+select:focus-visible, input:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
 
 .check { display: flex; align-items: center; gap: 8px; min-height: 29px; cursor: pointer; }
 .check input { width: 16px; height: 16px; accent-color: var(--navy); margin: 0; }
@@ -305,13 +322,17 @@ input:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
   width: 28px; height: 28px;
   border: 0; border-radius: 50%;
   background: var(--sand);
-  color: var(--taupe);
+  color: var(--ink-sub);
   font: inherit; font-weight: 600;
   cursor: pointer;
   transition: background .15s, color .15s;
 }
 .day[aria-pressed="true"] { background: var(--navy); color: var(--white); }
 .day:focus-visible { outline: 2px solid var(--taupe); outline-offset: 2px; }
+
+.hint { margin: -2px 0 0; font-size: 11px; line-height: 1.5; color: var(--ink-sub); }
+.note { color: var(--ink-sub); }
+[aria-invalid="true"] { border-color: var(--danger); }
 
 .error { min-height: 0; padding: 0 16px; color: var(--danger); font-size: 12px; }
 .error:empty { display: none; }
@@ -337,7 +358,7 @@ input:focus-visible { outline: 2px solid var(--navy); outline-offset: 1px; }
 }
 .btn-primary { padding: 6px 22px; background: var(--navy); color: var(--white); font-weight: 600; }
 .btn-primary:hover { opacity: 0.9; }
-.btn-text { padding: 6px 4px; background: transparent; color: var(--taupe); text-decoration: underline; text-underline-offset: 3px; }
+.btn-text { padding: 6px 4px; background: transparent; color: var(--ink-sub); text-decoration: underline; text-underline-offset: 3px; }
 .btn-text:hover { color: var(--navy); }
 .btn-small { padding: 4px 10px; background: var(--sand); color: var(--navy); font-size: 12px; }
 .btn-small.danger { background: var(--danger); color: var(--white); }

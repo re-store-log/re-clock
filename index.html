@@ -36,20 +36,20 @@
       </header>
 
       <div class="fields">
-        <label class="field">
+        <div class="field">
           <span>勤務開始</span>
-          <input type="time" name="workStart" required>
-        </label>
-        <label class="field">
+          <div class="time-select" data-name="workStart" data-label="勤務開始"></div>
+        </div>
+        <div class="field">
           <span>勤務終了</span>
-          <input type="time" name="workEnd" required>
-        </label>
+          <div class="time-select" data-name="workEnd" data-label="勤務終了"></div>
+        </div>
         <div class="field field-wide">
           <span>昼休み</span>
           <div class="range">
-            <input type="time" name="lunchStart" aria-label="昼休み開始" required>
+            <div class="time-select" data-name="lunchStart" data-label="昼休み開始"></div>
             <span>〜</span>
-            <input type="time" name="lunchEnd" aria-label="昼休み終了" required>
+            <div class="time-select" data-name="lunchEnd" data-label="昼休み終了"></div>
           </div>
         </div>
 
@@ -69,6 +69,8 @@
           <input type="checkbox" name="showSeconds">
           <span>秒を表示</span>
         </label>
+
+        <p class="hint field-full">小休憩は勤務開始から「集中→休憩」をくり返し、昼休みのあとは数え直します。</p>
 
         <div class="field field-full">
           <span>勤務曜日</span>

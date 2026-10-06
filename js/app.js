@@ -9,7 +9,7 @@
   const DAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 
   const DEFAULTS = Object.freeze({
-    workStart: "07:00",
+    workStart: "08:00",
     lunchStart: "12:30",
     lunchEnd: "13:30",
     workEnd: "18:00",
@@ -22,7 +22,7 @@
 
   const STATUSES = {
     prepare: { label: "身支度中", message: "今日も|ゆっくり始めよう", pose: "お仕事の準備中" },
-    work: { label: "お仕事中", message: "がんばるぞ", pose: "PCで作業中" },
+    work: { label: "お仕事中", message: "がんばるぞ！", pose: "PCで作業中" },
     break: { label: "ひと休み", message: "ちょっと休憩", pose: "コーヒーでひと息" },
     lunch: { label: "お昼ご飯", message: "もぐもぐ", pose: "ごはん中" },
     finish: { label: "お仕事おしまい", message: "今日も|いっぱい働いた", pose: "のんびり中" },
@@ -124,6 +124,7 @@
     const now = new Date();
     el.date.textContent = `${pad(now.getMonth() + 1)}.${pad(now.getDate())}`;
     const hm = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    el.widget.classList.toggle("with-seconds", settings.showSeconds);
     if (settings.showSeconds) {
       el.time.innerHTML = `${hm}<span class="sec">${pad(now.getSeconds())}</span>`;
     } else {
@@ -178,6 +179,8 @@
   // ---------- キャラクター（assets/rest-kun/<状態>-01.png, -02.png ... を順に切り替える） ----------
 
   const framesCache = {};
+  // OS の「視差効果を減らす／アニメーションを減らす」設定のときはアニメーションしない
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let animTimer = null;
   let frameIndex = 0;
 
@@ -214,7 +217,7 @@
     clearInterval(animTimer);
     frameIndex = 0;
     el.character.replaceChildren(frames[0]);
-    if (frames.length < 2) return;
+    if (frames.length < 2 || reducedMotion.matches) return;
     animTimer = setInterval(() => {
       frameIndex = (frameIndex + 1) % frames.length;
       el.character.replaceChildren(frames[frameIndex]);
@@ -230,6 +233,47 @@
   const resetArea = document.getElementById("reset-area");
   const openBtn = document.getElementById("open-settings");
 
+  // 時刻は「時」「分」のプルダウンで選ぶ（分は5分刻み）
+  const TIME_FIELDS = ["workStart", "workEnd", "lunchStart", "lunchEnd"];
+  const MINUTE_STEP = 5;
+
+  function makeSelect(name, label, values, unit) {
+    const sel = document.createElement("select");
+    sel.name = name;
+    sel.setAttribute("aria-label", label);
+    values.forEach((v) => sel.add(new Option(pad(v), pad(v))));
+    const wrap = document.createElement("span");
+    wrap.className = "time-part";
+    wrap.append(sel, unit);
+    return wrap;
+  }
+
+  form.querySelectorAll(".time-select").forEach((box) => {
+    const { name, label } = box.dataset;
+    const hours = Array.from({ length: 24 }, (_, i) => i);
+    const minutes = Array.from({ length: 60 / MINUTE_STEP }, (_, i) => i * MINUTE_STEP);
+    box.append(
+      makeSelect(`${name}H`, `${label}（時）`, hours, "時"),
+      makeSelect(`${name}M`, `${label}（分）`, minutes, "分")
+    );
+  });
+
+  function setTime(name, hhmm) {
+    const [h, m] = hhmm.split(":");
+    const minSel = form.elements[`${name}M`];
+    // 以前に5分刻み以外で保存された値も選べるようにしておく
+    if (![...minSel.options].some((o) => o.value === m)) {
+      minSel.add(new Option(m, m));
+      [...minSel.options].sort((a, b) => a.value - b.value).forEach((o) => minSel.add(o));
+    }
+    form.elements[`${name}H`].value = h;
+    minSel.value = m;
+  }
+
+  function getTime(name) {
+    return `${form.elements[`${name}H`].value}:${form.elements[`${name}M`].value}`;
+  }
+
   DAY_LABELS.forEach((label, day) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -244,7 +288,7 @@
   });
 
   function fillForm(s) {
-    ["workStart", "workEnd", "lunchStart", "lunchEnd"].forEach((k) => { form.elements[k].value = s[k]; });
+    TIME_FIELDS.forEach((k) => setTime(k, s[k]));
     form.elements.focusMin.value = s.focusMin;
     form.elements.breakMin.value = s.breakMin;
     form.elements.breakEnabled.checked = s.breakEnabled;
@@ -259,10 +303,10 @@
   function readForm() {
     const f = form.elements;
     return {
-      workStart: f.workStart.value,
-      workEnd: f.workEnd.value,
-      lunchStart: f.lunchStart.value,
-      lunchEnd: f.lunchEnd.value,
+      workStart: getTime("workStart"),
+      workEnd: getTime("workEnd"),
+      lunchStart: getTime("lunchStart"),
+      lunchEnd: getTime("lunchEnd"),
       breakEnabled: f.breakEnabled.checked,
       focusMin: f.focusMin.value,
       breakMin: f.breakMin.value,
@@ -271,19 +315,27 @@
     };
   }
 
+  // 問題があれば { message, field }（直してほしい欄の name）を返す
   function validate(raw) {
     const m = (k) => toMinutes(raw[k]);
-    if ([m("workStart"), m("workEnd"), m("lunchStart"), m("lunchEnd")].includes(null)) {
-      return "時刻をすべて入力してください。";
+    if (m("workStart") >= m("workEnd")) {
+      return { message: "勤務終了は、勤務開始より後の時刻にしてください。", field: "workEndH" };
     }
-    if (m("workStart") >= m("workEnd")) return "勤務終了は勤務開始より後にしてください。";
-    if (m("lunchStart") >= m("lunchEnd")) return "昼休みの終わりは始まりより後にしてください。";
+    if (m("lunchStart") >= m("lunchEnd")) {
+      return { message: "昼休みの終わりは、始まりより後の時刻にしてください。", field: "lunchEndH" };
+    }
+    if (m("lunchStart") < m("workStart") || m("lunchEnd") > m("workEnd")) {
+      return {
+        message: `昼休みは勤務時間（${raw.workStart}〜${raw.workEnd}）の中に設定してください。`,
+        field: "lunchStartH",
+      };
+    }
     if (raw.breakEnabled) {
       const ok = (v, max) => /^\d+$/.test(String(v)) && Number(v) >= 1 && Number(v) <= max;
-      if (!ok(raw.focusMin, 240)) return "集中時間は 1〜240 分で入力してください。";
-      if (!ok(raw.breakMin, 120)) return "休憩時間は 1〜120 分で入力してください。";
+      if (!ok(raw.focusMin, 240)) return { message: "集中時間は 1〜240 分で入力してください。", field: "focusMin" };
+      if (!ok(raw.breakMin, 120)) return { message: "休憩時間は 1〜120 分で入力してください。", field: "breakMin" };
     }
-    return "";
+    return null;
   }
 
   function syncBreakFields() {
@@ -298,11 +350,13 @@
     fillForm(settings);
     resetResetArea();
     modal.hidden = false;
-    form.elements.workStart.focus();
+    el.widget.inert = true;
+    form.elements.workStartH.focus();
   }
 
   function closeModal() {
     modal.hidden = true;
+    el.widget.inert = false;
     openBtn.focus();
   }
 
@@ -325,10 +379,11 @@
       '<span>初期設定に戻しますか？</span>' +
       '<button type="button" class="btn-small danger" data-act="yes">戻す</button>' +
       '<button type="button" class="btn-small" data-act="no">やめる</button>';
+    // ここではフォームに初期値を入れるだけ。ほかの変更と同じく「保存」で確定する
     resetArea.querySelector('[data-act="yes"]').addEventListener("click", () => {
-      applySettings(DEFAULTS);
-      fillForm(settings);
-      resetResetArea();
+      fillForm(normalize(DEFAULTS));
+      resetArea.innerHTML = '<span class="note">初期設定を入れました。「保存」で確定します。</span>';
+      form.querySelector(".btn-primary").focus();
     });
     resetArea.querySelector('[data-act="no"]').addEventListener("click", resetResetArea);
     resetArea.querySelector('[data-act="no"]').focus();
@@ -337,7 +392,22 @@
   openBtn.addEventListener("click", openModal);
   document.getElementById("close-settings").addEventListener("click", closeModal);
   modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+  document.addEventListener("keydown", (e) => {
+    if (modal.hidden) return;
+    if (e.key === "Escape") closeModal();
+    if (e.key === "Tab") {
+      const items = [...form.querySelectorAll("button, select, input")].filter((n) => !n.disabled && n.offsetParent);
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+  // 直し始めたらエラー表示を消す
+  form.addEventListener("change", (e) => {
+    e.target.removeAttribute("aria-invalid");
+    errorBox.textContent = "";
+  });
   form.elements.breakEnabled.addEventListener("change", syncBreakFields);
 
   form.addEventListener("submit", (e) => {
@@ -345,7 +415,11 @@
     const raw = readForm();
     const err = validate(raw);
     if (err) {
-      errorBox.textContent = err;
+      errorBox.textContent = err.message;
+      const field = form.elements[err.field];
+      field.setAttribute("aria-invalid", "true");
+      field.focus();
+      field.scrollIntoView({ block: "nearest" });
       return;
     }
     if (!raw.breakEnabled) {
